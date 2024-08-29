@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Runner</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #f0f0f0; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #instructions { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="instructions">
+        Drücken Sie die Leertaste zum Springen.<br>
+        Weichen Sie den Hindernissen aus!
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Lade die Bilder
+        const playerImage = new Image();
+        playerImage.src = 'Beraterin.png'; // Pfad zur Beraterin
+
+        const computerImage = new Image();
+        computerImage.src = 'DALL·E-2024-08-29-11.57.png'; // Pfad zum kaputten Computer
+
+        const sleepingColleagueImage = new Image();
+        sleepingColleagueImage.src = 'DALL·E-2024-08-29-12.04.png'; // Pfad zum schlafenden Kollegen
+
+        const flipChartImage = new Image();
+        flipChartImage.src = 'DALL·E-2024-08-29-12.02.png'; // Pfad zum umgefallenen Flipchart
+
+        const coffeePuddleImage = new Image();
+        coffeePuddleImage.src = 'DALL·E-2024-08-29-12.03.png'; // Pfad zur großen Kaffeepfütze
+
+        const angryClientImage = new Image();
+        angryClientImage.src = 'DALL·E-2024-08-29-12.05.png'; // Pfad zum schimpfenden Kunden
+
+        const player = {
+            x: 50,
+            y: canvas.height - 150,
+            width: 60,
+            height: 100,
+            jumping: false,
+            jumpStrength: 20,
+            yVelocity: 0,
+            draw: function() {
+                ctx.drawImage(playerImage, this.x, this.y, this.width, this.height);
+            }
+        };
+
+        const obstacles = [
+            {x: canvas.width, y: canvas.height - 150, width: 80, height: 80, image: computerImage},
+            {x: canvas.width + 400, y: canvas.height - 120, width: 60, height: 60, image: sleepingColleagueImage},
+            {x: canvas.width + 800, y: canvas.height - 130, width: 100, height: 100, image: flipChartImage},
+            {x: canvas.width + 1200, y: canvas.height - 80, width: 80, height: 50, image: coffeePuddleImage},
+            {x: canvas.width + 1600, y: canvas.height - 150, width: 80, height: 100, image: angryClientImage},
+        ];
+
+        let score = 0;
+        const gravity = 1;
+        const gameSpeed = 5;
+
+        function drawObstacles() {
+            obstacles.forEach(obs => {
+                ctx.drawImage(obs.image, obs.x, obs.y, obs.width, obs.height);
+            });
+        }
+
+        function updateGame() {
+            // Player jump
+            if (player.jumping) {
+                player.yVelocity += gravity;
+                player.y += player.yVelocity;
+                if (player.y > canvas.height - player.height) {
+                    player.y = canvas.height - player.height;
+                    player.jumping = false;
+                }
+            }
+
+            // Move obstacles
+            obstacles.forEach(obs => {
+                obs.x -= gameSpeed;
+                if (obs.x < -obs.width) {
+                    obs.x = canvas.width + Math.random() * 300;
+                    score++;
+                }
+            });
+
+            // Check collision
+            obstacles.forEach(obs => {
+                if (player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y) {
+                    // Game over
+                    alert('Game Over! Ihr Punktestand: ' + score);
+                    resetGame();
+                }
+            });
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText('Punkte: ' + score, 10, 30);
+        }
+
+        function resetGame() {
+            player.y = canvas.height - player.height;
+            player.jumping = false;
+            score = 0;
+            obstacles.forEach((obs, index) => {
+                obs.x = canvas.width + index * 400;
+            });
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            updateGame();
+            player.draw();
+            drawObstacles();
+            drawScore();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !player.jumping) {
+                player.jumping = true;
+                player.yVelocity = -player.jumpStrength;
+            }
+        });
+
+        resetGame();
+        gameLoop();
+    </script>
+</body>
+</html>
